@@ -1,6 +1,7 @@
 Waste Segregation System and Analytics
 <p align="center">
-<img src="https-placeholder-for-dashboard-image.png" alt="Dashboard Preview" width="800"/>
+<!-- IMPORTANT: Replace this placeholder with a real screenshot of your project -->
+<img src="https://www.google.com/search?q=https://placehold.co/800x400/1e293b/ffffff%3Ftext%3DYour%2BDashboard%2BScreenshot" alt="Dashboard Preview" width="800"/>
 </p>
 
 <p align="center">
@@ -13,6 +14,8 @@ Waste Segregation System and Analytics
 <img src="https://www.google.com/search?q=https://img.shields.io/badge/Chart.js-Interactive-ff6384%3Fstyle%3Dfor-the-badge%26logo%3Dchart.js" alt="Chart.js">
 <img src="https://www.google.com/search?q=https://img.shields.io/badge/Tailwind_CSS-Utility_First-38B2AC%3Fstyle%3Dfor-the-badge%26logo%3Dtailwind-css" alt="Tailwind CSS">
 </p>
+
+🚀 Live Demo
 
 🚀 Live Demo
 [Link to your live demo hosted on GitHub Pages or another service would go here.]
