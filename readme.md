@@ -1,109 +1,69 @@
-Waste Segregation System and Analytics
-<p align="center">
-<!-- IMPORTANT: Replace this placeholder with a real screenshot of your project -->
-<img src="https://www.google.com/search?q=https://placehold.co/800x400/1e293b/ffffff%3Ftext%3DYour%2BDashboard%2BScreenshot" alt="Dashboard Preview" width="800"/>
-</p>
+Waste Sorting System Analytics
+This project is a web-based dashboard that simulates a real-time waste sorting system using an IR sensor and a camera-based Machine Learning model. It provides live analytics, a visual representation of the sorting process on a conveyor belt, and a detailed event log.
 
-<p align="center">
-<em>A real-time dashboard simulating an automated waste segregation system with multi-sensor data (IR/ML) and live analytics.</em>
-</p>
+The application is built with vanilla HTML, CSS, and JavaScript, using Tailwind CSS for styling and Chart.js for data visualization. It integrates with Google Firebase (Firestore) for persistent data logging but includes a fallback "Offline Mode" to ensure the demo is always functional.
 
-<p align="center">
-<img src="https://www.google.com/search?q=https://img.shields.io/badge/JavaScript-ES6%252B-yellow%3Fstyle%3Dfor-the-badge%26logo%3Djavascript" alt="JavaScript">
-<img src="https://www.google.com/search?q=https://img.shields.io/badge/Firebase-Realtime_DB-orange%3Fstyle%3Dfor-the-badge%26logo%3Dfirebase" alt="Firebase">
-<img src="https://www.google.com/search?q=https://img.shields.io/badge/Chart.js-Interactive-ff6384%3Fstyle%3Dfor-the-badge%26logo%3Dchart.js" alt="Chart.js">
-<img src="https://www.google.com/search?q=https://img.shields.io/badge/Tailwind_CSS-Utility_First-38B2AC%3Fstyle%3Dfor-the-badge%26logo%3Dtailwind-css" alt="Tailwind CSS">
-</p>
-
-🚀 Live Demo
-
-🚀 Live Demo
-[Link to your live demo hosted on GitHub Pages or another service would go here.]
-
-✨ Features
-This project provides a comprehensive simulation and analytics platform for a smart waste segregation facility.
-
-Feature
-
-Description
-
-Real-time Monitoring
-
-Connects to a Firebase Firestore database to display live data, ensuring all analytics are up-to-the-second.
-
-Two-Stage Simulation
-
-Simulates a sophisticated sorting process using an IR Sensor for pre-sorting and an ML model for specific material classification.
-
-Interactive Visualization
-
-Utilizes Chart.js to display KPIs through various charts, including waste categories, recycled types, and processing trends.
-
-Dynamic Filtering
-
-Allows users to filter all analytics data by various time ranges (5 Mins, 1 Hr, 1 Day, etc.) to identify trends.
-
-System Controls
-
-Features live controls to start/pause the conveyor and simulate system faults to demonstrate error logging and system resilience.
-
-Modern UI/UX
-
-A fully responsive interface with Light & Dark Mode that respects and saves user preference.
-
-🛠️ How the System Works
-The dashboard simulates a multi-stage waste segregation process from start to finish.
-
-Item Generation: The simulation randomly generates a new waste item.
-
-IR Sensor Check: An initial pre-sort classifies the item as "Organic" or "Inorganic."
-
-ML Camera Classification: A simulated ML model provides a specific classification (e.g., "Plastic") and a confidence score.
-
-Sorting & Diversion: The item is diverted, and the corresponding UI checkpoint flashes green. Unidentified items are sent to the "End of Line."
-
-Real-time Data Logging: The result is immediately saved to the Firebase Firestore database.
-
-Live Dashboard Update: An onSnapshot listener detects the new database entry and instantly updates all charts and metrics on the dashboard.
-
-💻 Tech Stack
-This project is built with a modern, serverless architecture.
-
-Category
-
-Technology
+File Structure
+The project is broken down into a modular structure for better organization and maintainability.
 
 Frontend
+index.html: The main HTML file. It contains the structure of the page and links to the stylesheets and scripts.
 
-HTML5, CSS3, JavaScript (ES6 Modules)
+style.css: Contains all the custom CSS and styling for the application.
 
-Styling
+main.js: The main entry point for the application's JavaScript. It handles the overall application state and initializes all modules.
 
-Tailwind CSS (Utility-First Framework)
+ui.js: This module is responsible for all DOM manipulations. It creates charts, updates text, renders the event log, and manages the visual state of the UI components.
 
-Data Viz
+simulation.js: Contains the core logic for the waste sorting simulation. It manages the conveyor belt state, creates new waste items, and processes them through the sorting checkpoints.
 
-Chart.js (Interactive Charting Library)
+firebase.js: Handles all interactions with the Firebase backend, including initialization, authentication, writing data to Firestore, and setting up real-time listeners.
 
 Backend
+firestore.rules: This file defines the security rules for the Cloud Firestore database. It specifies who can read from and write to the database collections.
 
-Firebase Firestore (Real-time NoSQL Database) 
- Firebase Authentication (Secure User Sign-in)
+How It Works
+Initialization: On page load, main.js initializes the UI (ui.js) and attempts to connect to Firebase (firebase.js).
 
-UX
+Firebase Connection:
 
-Toastify.js (Non-intrusive Notifications)
+If the connection is successful, the app runs in Online Mode. A real-time listener is attached to the Firestore collection to sync data.
 
-⚙️ How to Run Locally
-To run this dashboard on your own machine, follow these steps:
+If the connection fails (due to invalid keys, no internet, etc.), the app seamlessly falls back to Offline Mode.
 
-Prerequisites
-Git installed.
+Simulation Start: When the user clicks "START", main.js calls simulation.js to begin the process.
 
-Visual Studio Code with the Live Server extension (recommended) OR Python installed.
+Item Processing: The simulation module (simulation.js) periodically creates new waste items and advances them along a virtual conveyor belt. It calls functions in ui.js to update the visuals.
 
-1. Clone the Repository
-git clone [https://github.com/your-username/your-repo-name.git](https://github.com/your-username/your-repo-name.git)
-cd your-repo-name
+Data Logging:
 
+In Online Mode, each processed item is saved to Firestore via firebase.js. The UI is then updated by the real-time listener.
 
+In Offline Mode, processed items are saved to a local array within the simulation.js module, and the UI is updated directly.
+
+Analytics: The ui.js module reads the event log (either from Firebase or the local array) and recalculates all statistics and charts.
+
+Setup & Deployment
+Firebase Configuration:
+
+Open firebase.js.
+
+Replace the placeholder userFirebaseConfig object with your own Firebase project's configuration keys.
+
+Deploy to GitHub Pages:
+
+Upload all the files (index.html, style.css, *.js, firestore.rules) to a new GitHub repository.
+
+In the repository's settings, go to the "Pages" section.
+
+Select the branch you want to deploy from (e.g., main) and click "Save".
+
+GitHub will provide you with a live URL for your project.
+
+Firestore Rules:
+
+In your Firebase project console, go to Firestore Database -> Rules.
+
+Copy the content of firestore.rules and paste it into the editor.
+
+Publish the rules.
