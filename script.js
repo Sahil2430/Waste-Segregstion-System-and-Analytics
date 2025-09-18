@@ -3,7 +3,8 @@ import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gsta
 import { getFirestore, collection, addDoc, onSnapshot, getDocs, deleteDoc, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 // --- State Variables ---
-let isRunning = false, isProcessing = false, unsubscribe;
+let isRunning = false;
+let unsubscribe;
 let allWasteData = [], chartInstances = {}, currentFilter = 'all';
 let db, auth, wasteLogCollection;
 
@@ -39,10 +40,10 @@ function simulateSensor() {
     return { material: randomMaterial, confidence, irResult: MATERIALS[randomMaterial].ir_detect };
 }
 
-async function runSortingSimulation() {
-    if (isProcessing || !isRunning) return;
-    isProcessing = true;
-    
+// This function now processes ONE item and returns when done.
+async function processOneItem() {
+    if (!isRunning) return;
+
     const { material, confidence, irResult } = simulateSensor();
     const displayName = material.charAt(0).toUpperCase() + material.slice(1);
     
@@ -51,18 +52,18 @@ async function runSortingSimulation() {
     conveyorItem.classList.add('active');
     
     await new Promise(resolve => setTimeout(resolve, 1000));
-    if (!isRunning) { isProcessing = false; return; }
+    if (!isRunning) { resetSensorUI(); return; }
     irOutputEl.innerHTML = `<p class="text-3xl font-bold text-teal-800 dark:text-teal-300">${irResult}</p>`;
     currentItemEl.textContent = `Processing: ${displayName}`;
 
     await new Promise(resolve => setTimeout(resolve, 1500));
-    if (!isRunning) { isProcessing = false; return; }
+    if (!isRunning) { resetSensorUI(); return; }
     mlOutputEl.innerHTML = `<p class="text-3xl font-bold text-blue-800 dark:text-blue-300">${displayName}</p><p class="text-sm text-blue-600 dark:text-blue-400">Confidence: ${confidence}%</p>`;
 
     await new Promise(resolve => setTimeout(resolve, 1500));
-    if (!isRunning) { isProcessing = false; return; }
+    if (!isRunning) { resetSensorUI(); return; }
 
-    const identifiedStage = Object.keys(MATERIALS).indexOf(material);
+    const identifiedStage = Object.keysMATERIALS).indexOf(material);
     if (identifiedStage >= 0 && identifiedStage < 7) { 
         updateSensorUI(identifiedStage, 'success');
     } else {
@@ -71,16 +72,20 @@ async function runSortingSimulation() {
     
     await saveData(material, confidence, irResult);
     
-    // This timeout now controls the entire loop.
-    setTimeout(() => { 
-        isProcessing = false; 
-        resetSensorUI();
-        // If the system is still running, schedule the next item.
+    // Wait for the animation to finish before resetting
+    await new Promise(resolve => setTimeout(resolve, 500));
+    resetSensorUI();
+}
+
+// This is the new master loop controller.
+async function startSimulationLoop() {
+    while (isRunning) {
+        await processOneItem();
         if (isRunning) {
-            // Use a short delay between items for a more active feel.
-            setTimeout(runSortingSimulation, 1000);
+            // Delay between items
+            await new Promise(resolve => setTimeout(resolve, 1000));
         }
-    }, 500);
+    }
 }
 
 async function saveData(material, confidence, irResult, isFault = false) {
@@ -99,7 +104,6 @@ async function saveData(material, confidence, irResult, isFault = false) {
 
 async function initializeFirebase() {
     try {
-        // --- THIS IS YOUR LIVE FIREBASE CONFIG ---
         const firebaseConfig = {
           apiKey: "AIzaSyAGYZY_bw7OwrutPQS6wNzSaSPBT2krGkk",
           authDomain: "waste-sorting-system-analytics.firebaseapp.com",
@@ -109,7 +113,6 @@ async function initializeFirebase() {
           appId: "1:252843946600:web:232e46c83cf622025541dd",
           measurementId: "G-KGRCC9CEW0"
         };
-        // --- END OF YOUR CONFIG ---
 
         const app = initializeApp(firebaseConfig);
         db = getFirestore(app);
@@ -286,14 +289,14 @@ function resetSensorUI() {
 function toggleConveyor() {
     isRunning = !isRunning;
     if (isRunning) {
-        // Start the simulation loop.
-        runSortingSimulation();
+        // Start the master simulation loop.
+        startSimulationLoop();
         conveyorBtn.textContent = 'PAUSE';
         statusLightEl.className = 'w-4 h-4 rounded-full bg-green-500 animate-pulse';
         systemStatusText.textContent = 'System operating normally';
         showToast("Conveyor started.", "success");
     } else {
-        // The loop will stop itself because isRunning is now false.
+        // The loop will see isRunning is false and stop by itself.
         conveyorBtn.textContent = 'START';
         statusLightEl.className = 'w-4 h-4 rounded-full bg-yellow-400';
         systemStatusText.textContent = 'Conveyor paused';
@@ -350,6 +353,4 @@ window.onload = () => {
     }
     initializeFirebase();
 };
-
-
 
