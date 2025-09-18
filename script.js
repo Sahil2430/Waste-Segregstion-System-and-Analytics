@@ -63,7 +63,8 @@ async function processOneItem() {
     await new Promise(resolve => setTimeout(resolve, 1500));
     if (!isRunning) { resetSensorUI(); return; }
 
-    const identifiedStage = Object.keysMATERIALS).indexOf(material);
+    // *** FIX: Corrected the syntax error here ***
+    const identifiedStage = Object.keys(MATERIALS).indexOf(material);
     if (identifiedStage >= 0 && identifiedStage < 7) { 
         updateSensorUI(identifiedStage, 'success');
     } else {
@@ -77,13 +78,21 @@ async function processOneItem() {
     resetSensorUI();
 }
 
-// This is the new master loop controller.
+// This is the new master loop controller with error handling.
 async function startSimulationLoop() {
     while (isRunning) {
-        await processOneItem();
-        if (isRunning) {
-            // Delay between items
-            await new Promise(resolve => setTimeout(resolve, 1000));
+        try {
+            await processOneItem();
+            if (isRunning) {
+                // Delay between items
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+        } catch (error) {
+            console.error("A critical error occurred in the simulation loop:", error);
+            showToast("Simulation error. Check console.", "error");
+            // Stop the simulation on error to prevent further issues.
+            isRunning = false;
+            toggleConveyor(); // Update UI to reflect the stop
         }
     }
 }
@@ -353,4 +362,3 @@ window.onload = () => {
     }
     initializeFirebase();
 };
-
