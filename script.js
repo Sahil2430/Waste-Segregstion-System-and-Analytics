@@ -3,7 +3,7 @@ import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gsta
 import { getFirestore, collection, addDoc, onSnapshot, getDocs, deleteDoc, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 // --- State Variables ---
-let isRunning = false, isProcessing = false, intervalId, unsubscribe;
+let isRunning = false, isProcessing = false, unsubscribe;
 let allWasteData = [], chartInstances = {}, currentFilter = 'all';
 let db, auth, wasteLogCollection;
 
@@ -71,9 +71,15 @@ async function runSortingSimulation() {
     
     await saveData(material, confidence, irResult);
     
+    // This timeout now controls the entire loop.
     setTimeout(() => { 
         isProcessing = false; 
         resetSensorUI();
+        // If the system is still running, schedule the next item.
+        if (isRunning) {
+            // Use a short delay between items for a more active feel.
+            setTimeout(runSortingSimulation, 1000);
+        }
     }, 500);
 }
 
@@ -113,7 +119,6 @@ async function initializeFirebase() {
             if (user) {
                 systemStatusText.textContent = "System is offline";
                 [conveyorBtn, faultBtn].forEach(b => b.disabled = false);
-                // Note: The collection name is hardcoded here. It will be created in your Firestore instance.
                 wasteLogCollection = collection(db, "waste_log_v4"); 
                 setupRealtimeListener();
             } else {
@@ -122,7 +127,6 @@ async function initializeFirebase() {
             }
         });
         
-        // Use anonymous sign-in for the live version.
         await signInAnonymously(auth);
 
     } catch (error) {
@@ -282,13 +286,14 @@ function resetSensorUI() {
 function toggleConveyor() {
     isRunning = !isRunning;
     if (isRunning) {
-        intervalId = setInterval(runSortingSimulation, 5000);
+        // Start the simulation loop.
+        runSortingSimulation();
         conveyorBtn.textContent = 'PAUSE';
         statusLightEl.className = 'w-4 h-4 rounded-full bg-green-500 animate-pulse';
         systemStatusText.textContent = 'System operating normally';
         showToast("Conveyor started.", "success");
     } else {
-        clearInterval(intervalId);
+        // The loop will stop itself because isRunning is now false.
         conveyorBtn.textContent = 'START';
         statusLightEl.className = 'w-4 h-4 rounded-full bg-yellow-400';
         systemStatusText.textContent = 'Conveyor paused';
@@ -345,4 +350,6 @@ window.onload = () => {
     }
     initializeFirebase();
 };
+
+
 
