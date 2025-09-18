@@ -1,11 +1,13 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore, collection, addDoc, onSnapshot, getDocs, deleteDoc, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+// --- State Variables ---
 let isRunning = false, isProcessing = false, intervalId, unsubscribe;
 let allWasteData = [], chartInstances = {}, currentFilter = 'all';
 let db, auth, wasteLogCollection;
 
+// --- DOM Elements ---
 const conveyorBtn = document.getElementById('conveyor-btn'), statusLightEl = document.getElementById('status-light'),
     systemStatusText = document.getElementById('system-status-text'), currentItemEl = document.getElementById('current-item'),
     irOutputEl = document.getElementById('ir-output'), mlOutputEl = document.getElementById('ml-output'),
@@ -15,6 +17,7 @@ const conveyorBtn = document.getElementById('conveyor-btn'), statusLightEl = doc
     conveyorItem = document.getElementById('conveyor-item'), themeToggle = document.getElementById('theme-toggle'),
     themeIcon = document.getElementById('theme-icon'), faultBtn = document.getElementById('fault-btn');
 
+// --- Materials and Simulation Data ---
 const MATERIALS = {
     organic: { category: "dumped", destination: "compost", ir_detect: "Organic" },
     plastic: { category: "recycled", destination: "crushers", ir_detect: "Inorganic" },
@@ -26,6 +29,7 @@ const MATERIALS = {
     unknown: { category: "dumped", destination: "manual inspection", ir_detect: "Inorganic" }
 };
 
+// --- Core Functions ---
 function simulateSensor() {
     const materialTypes = Object.keys(MATERIALS);
     const randomMaterial = materialTypes[Math.floor(Math.random() * materialTypes.length)];
@@ -89,8 +93,18 @@ async function saveData(material, confidence, irResult, isFault = false) {
 
 async function initializeFirebase() {
     try {
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        // --- THIS IS YOUR LIVE FIREBASE CONFIG ---
+        const firebaseConfig = {
+          apiKey: "AIzaSyAGYZY_bw7OwrutPQS6wNzSaSPBT2krGkk",
+          authDomain: "waste-sorting-system-analytics.firebaseapp.com",
+          projectId: "waste-sorting-system-analytics",
+          storageBucket: "waste-sorting-system-analytics.firebasestorage.app",
+          messagingSenderId: "252843946600",
+          appId: "1:252843946600:web:232e46c83cf622025541dd",
+          measurementId: "G-KGRCC9CEW0"
+        };
+        // --- END OF YOUR CONFIG ---
+
         const app = initializeApp(firebaseConfig);
         db = getFirestore(app);
         auth = getAuth(app);
@@ -99,19 +113,18 @@ async function initializeFirebase() {
             if (user) {
                 systemStatusText.textContent = "System is offline";
                 [conveyorBtn, faultBtn].forEach(b => b.disabled = false);
-                wasteLogCollection = collection(db, `artifacts/${appId}/public/data/waste_log_v4`);
+                // Note: The collection name is hardcoded here. It will be created in your Firestore instance.
+                wasteLogCollection = collection(db, "waste_log_v4"); 
                 setupRealtimeListener();
             } else {
-                systemStatusText.textContent = "Authentication Failed.";
+                systemStatusText.textContent = "Authentication Failed. Refresh page.";
                 [conveyorBtn, faultBtn].forEach(b => b.disabled = true);
             }
         });
         
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-            await signInWithCustomToken(auth, __initial_auth_token);
-        } else {
-            await signInAnonymously(auth);
-        }
+        // Use anonymous sign-in for the live version.
+        await signInAnonymously(auth);
+
     } catch (error) {
         console.error("Firebase initialization failed:", error);
         systemStatusText.textContent = "Database connection failed.";
@@ -148,16 +161,16 @@ function renderLog(data) {
         let logMessage, colorClass;
         if (item.isFault) {
             logMessage = `SYSTEM FAULT: ${displayName}`;
-            colorClass = 'border-yellow-500 bg-yellow-100 text-yellow-900 dark:bg-yellow-900/50 dark:text-yellow-100';
+            colorClass = 'border-yellow-500 bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-200';
         } else if (item.category === 'recycled') {
             logMessage = `Recycled: ${displayName} (Conf: ${item.confidence}%)`;
-            colorClass = 'border-emerald-500 bg-emerald-100 text-emerald-900 dark:bg-emerald-900/50 dark:text-emerald-100';
+            colorClass = 'border-emerald-500 bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-200';
         } else if (item.category === 'special') {
              logMessage = `Special: ${displayName} (Conf: ${item.confidence}%)`;
-            colorClass = 'border-cyan-500 bg-cyan-100 text-cyan-900 dark:bg-cyan-900/50 dark:text-cyan-100';
+            colorClass = 'border-cyan-500 bg-cyan-100 text-cyan-800 dark:bg-cyan-900/50 dark:text-cyan-200';
         } else {
             logMessage = `Dumped: ${displayName} (Conf: ${item.confidence}%)`;
-            colorClass = 'border-red-500 bg-red-100 text-red-900 dark:bg-red-900/50 dark:text-red-100';
+            colorClass = 'border-red-500 bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200';
         }
         
         logItem.className = `flex items-center space-x-3 p-2 rounded-lg border-l-4 text-sm ${colorClass}`;
@@ -292,6 +305,7 @@ function showToast(message, type = "info") {
     Toastify({ text: message, duration: 3000, gravity: "top", position: "right", style: { background: colors[type] } }).showToast();
 }
 
+// --- Event Listeners ---
 conveyorBtn.addEventListener('click', toggleConveyor);
 clearLogBtn.addEventListener('click', clearLog);
 faultBtn.addEventListener('click', () => {
@@ -322,6 +336,7 @@ document.querySelectorAll('.time-filter-btn').forEach(btn => {
     });
 });
 
+// --- Initial Load ---
 window.onload = () => {
     const isDark = localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
     if (isDark) {
